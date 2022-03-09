@@ -13,7 +13,7 @@
 
         futTarget = "app.fut";
         name = "FableTemplate";
-        version = "0.0.0";
+        version = let _ver = builtins.getEnv "GITVERSION_NUGETVERSIONV2"; in if _ver == "" then "0.0.0" else "${_ver}.${builtins.getEnv "GITVERSION_COMMITSSINCEVERSIONSOURCE"}";
         configArg = "";
         lockFile = ./fsharp/packages.lock.json;
         nugetSha256 = "sha256-ydTQ4VKJ7fqoRTNISl71PxG56syWZQFsnCTcacAdrA4=";
@@ -94,7 +94,13 @@
             inherit name;
             doCheck = false;
             inherit version;
-            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ [ nodejs ];
+            DOTNET_CLI_TELEMETRY_OPTOUT=1;
+            LOCALE_ARCHIVE="${pkgs.glibcLocales}/lib/locale/locale-archive";
+            CLR_OPENSSL_VERSION_OVERRIDE=1.1;
+            DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
+            DOTNET_CLI_HOME = "/tmp/dotnet_cli";
+            DOTNET_ROOT = "${sdk}";
+            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ [ nodejs sdk pkgs.openssl pkgs.gcc-unwrapped.lib pkgs.zlib pkgs.tlf pkgs.libkrb5 pkgs.icu.out ];
           };
 
           futlib = pkgs.stdenv.mkDerivation {
@@ -148,6 +154,9 @@
                 cat $out/$(basename ${FSharpOut} .js).mjs | ${pkgs.perl}/bin/perl -0777 -pe "s/export \{[^\}]+\};//igs" > $out/${FSharpOut}.global.js
                 chmod +x $out/$(basename ${FSharpOut} .js).mjs
                 chmod +x $out/${FSharpOut}.global.js
+                cd $out
+                tar -czf /tmp/${name}.tar.gz .
+                cp /tmp/${name}.tar.gz $out
             '';
           };
 
