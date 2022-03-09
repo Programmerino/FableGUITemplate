@@ -5,7 +5,7 @@
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.eachSystem [ "x86_64-darwin" "aarch64-darwin" "aarch64-linux" "x86_64-linux" ] (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { 
           inherit system;
@@ -89,8 +89,63 @@
           name = "${name}-deps-with-runtime";
           paths = [ "${sdk}/shared" nugetPackages-unpatched ];
         };
+
+        futlib = pkgs.stdenv.mkDerivation {
+          name = "${name}-futlib";
+          src = ./futhark;
+          dontInstall = true;
+          nativeBuildInputs = [ pkgs.haskellPackages.futhark pkgs.emscripten ];
+          EMCFLAGS = "--memory-init-file 0 -flto -g0 -O3 -s ASSERTIONS=0 -s DYNAMIC_EXECUTION=0 -s WASM_ASYNC_COMPILATION=0 -s EVAL_CTORS=2 -s SINGLE_FILE=1 -s INVOKE_RUN=0 -s FULL_ES2=1 -s TEXTDECODER=2";
+          buildPhase = ''
+            mkdir -p $out
+            futhark wasm --library ${futTarget} -o $out/${futTarget}
+            sed -i 's/export {newFutharkContext/export {newFutharkContext, loadWASM/' $out/${futTarget}.mjs
+          '';
+        };
+
+        fsharp = pkgs.stdenv.mkDerivation {
+          name = "${name}-fsharp";
+          src = ./fsharp;
+          dontInstall = true;
+          nativeBuildInputs = [ sdk ];
+          DOTNET_CLI_TELEMETRY_OPTOUT=1;
+          noAuditTmpdir = true;
+          buildPhase = ''
+              export HOME="$(mktemp -d)"
+              mkdir -p $out
+              dotnet restore --source ${depsWithRuntime} --nologo --locked-mode${configArg}  --use-lock-file --lock-file-path "${lockFile}" ${project}
+              ${fable}/bin/fable -c Release --optimize --noRestore ${project}
+              cp -r $PWD/fable_modules $out/fable_modules
+              cp ${FSharpOut} $out/${FSharpOut}
+          '';
+        };
+
+        package = pkgs.stdenv.mkDerivation {
+          inherit name;
+          inherit src;
+          inherit version;
+          dontStrip = true;
+          dontPatch = true;
+          dontInstall = true;
+          distPhase = "true";
+          nativeBuildInputs = [pkgs.esbuild];
+          buildPhase = ''
+              mkdir -p $out
+              cp -r ${futlib}/. .
+              cp -r ${fsharp}/. .
+              esbuild --bundle --define:__dirname=\"/\" --define:import.meta.url=\"file:///App.fs.mjs\" --format=esm --outfile=$(basename ${FSharpOut} .js).mjs --platform=neutral --target=esnext --tree-shaking=true --external:path --external:fs --external:url --external:perf_hooks --external:os --external:readline --external:worker_threads $PWD/${FSharpOut}
+              ${pkgs.nodePackages.terser}/bin/terser --comments all --module -c sequences=false,arguments,inline=false,reduce_vars=false,collapse_vars=false,keep_fargs=false,keep_infinity,module,passes=2,pure_getters=true,reduce_funcs=false,reduce_vars=false,toplevel,typeofs=false,unsafe,unsafe_arrows=true,ecma=2015,unsafe_math,unsafe_methods=true $(basename ${FSharpOut} .js).mjs | ${pkgs.nodePackages.js-beautify}/bin/js-beautify > $out/$(basename ${FSharpOut} .js).mjs
+              sed -i '1s;^;#!${nodejs}/bin/node\n;' $out/$(basename ${FSharpOut} .js).mjs
+              cat $out/$(basename ${FSharpOut} .js).mjs | ${pkgs.perl}/bin/perl -0777 -pe "s/export \{[^\}]+\};//igs" > $out/${FSharpOut}.global.js
+              chmod +x $out/$(basename ${FSharpOut} .js).mjs
+              chmod +x $out/${FSharpOut}.global.js
+              cd $out
+              tar -czf /tmp/${name}.tar.gz .
+              cp /tmp/${name}.tar.gz $out
+          '';
+        };
       in rec {
-          devShell = pkgs.mkShell {
+          devShells.default = pkgs.mkShell {
             inherit name;
             doCheck = false;
             inherit version;
@@ -101,63 +156,6 @@
             DOTNET_CLI_HOME = "/tmp/dotnet_cli";
             DOTNET_ROOT = "${sdk}";
             buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ [ nodejs sdk pkgs.openssl pkgs.gcc-unwrapped.lib pkgs.zlib pkgs.tlf pkgs.libkrb5 pkgs.icu.out ];
-          };
-
-          futlib = pkgs.stdenv.mkDerivation {
-            name = "${name}-futlib";
-            src = ./futhark;
-            dontInstall = true;
-            nativeBuildInputs = [ pkgs.haskellPackages.futhark pkgs.emscripten ];
-            EMCFLAGS = "--memory-init-file 0 -flto -g0 -O3 -s ASSERTIONS=0 -s DYNAMIC_EXECUTION=0 -s WASM_ASYNC_COMPILATION=0 -s EVAL_CTORS=2 -s SINGLE_FILE=1 -s INVOKE_RUN=0 -s FULL_ES2=1 -s TEXTDECODER=2";
-            buildPhase = ''
-              mkdir -p $out
-              futhark wasm --library ${futTarget} -o $out/${futTarget}
-              sed -i 's/export {newFutharkContext/export {newFutharkContext, loadWASM/' $out/${futTarget}.mjs
-            '';
-
-            checkPhase = checks.futlib.checkPhase;
-          };
-
-          fsharp = pkgs.stdenv.mkDerivation {
-            name = "${name}-fsharp";
-            src = ./fsharp;
-            dontInstall = true;
-            nativeBuildInputs = [ sdk ];
-            DOTNET_CLI_TELEMETRY_OPTOUT=1;
-            noAuditTmpdir = true;
-            buildPhase = ''
-                export HOME="$(mktemp -d)"
-                mkdir -p $out
-                dotnet restore --source ${depsWithRuntime} --nologo --locked-mode${configArg}  --use-lock-file --lock-file-path "${lockFile}" ${project}
-                ${fable}/bin/fable -c Release --optimize --noRestore ${project}
-                cp -r $PWD/fable_modules $out/fable_modules
-                cp ${FSharpOut} $out/${FSharpOut}
-            '';
-          };
-
-          package = pkgs.stdenv.mkDerivation {
-            inherit name;
-            inherit src;
-            inherit version;
-            dontStrip = true;
-            dontPatch = true;
-            dontInstall = true;
-            distPhase = "true";
-            nativeBuildInputs = [pkgs.esbuild];
-            buildPhase = ''
-                mkdir -p $out
-                cp -r ${futlib}/. .
-                cp -r ${fsharp}/. .
-                esbuild --bundle --define:__dirname=\"/\" --define:import.meta.url=\"file:///App.fs.mjs\" --format=esm --outfile=$(basename ${FSharpOut} .js).mjs --platform=neutral --target=esnext --tree-shaking=true --external:path --external:fs --external:url --external:perf_hooks --external:os --external:readline --external:worker_threads $PWD/${FSharpOut}
-                ${pkgs.nodePackages.terser}/bin/terser --comments all --module -c sequences=false,arguments,inline=false,reduce_vars=false,collapse_vars=false,keep_fargs=false,keep_infinity,module,passes=2,pure_getters=true,reduce_funcs=false,reduce_vars=false,toplevel,typeofs=false,unsafe,unsafe_arrows=true,ecma=2015,unsafe_math,unsafe_methods=true $(basename ${FSharpOut} .js).mjs | ${pkgs.nodePackages.js-beautify}/bin/js-beautify > $out/$(basename ${FSharpOut} .js).mjs
-                sed -i '1s;^;#!${nodejs}/bin/node\n;' $out/$(basename ${FSharpOut} .js).mjs
-                cat $out/$(basename ${FSharpOut} .js).mjs | ${pkgs.perl}/bin/perl -0777 -pe "s/export \{[^\}]+\};//igs" > $out/${FSharpOut}.global.js
-                chmod +x $out/$(basename ${FSharpOut} .js).mjs
-                chmod +x $out/${FSharpOut}.global.js
-                cd $out
-                tar -czf /tmp/${name}.tar.gz .
-                cp /tmp/${name}.tar.gz $out
-            '';
           };
 
           checks.futlib = pkgs.stdenv.mkDerivation {
@@ -195,7 +193,7 @@
 
           defaultApp = apps.package;
 
-          defaultPackage = packages.package;
+          packages.default = packages.package;
       }
     );
 }
