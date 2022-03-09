@@ -37,4 +37,4 @@ jobs:
           automatic_release_tag: "${{ steps.gitversion.outputs.semVer}}"
           prerelease: ${{ steps.gitversion.outputs.preReleaseLabel != '' }}
           files: |
-            *.tar.gz
+            ./result/*.tar.gz
