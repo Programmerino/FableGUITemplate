@@ -1,5 +1,5 @@
 {
-  description = "FableTemplate";
+  description = "FableGUITemplate";
   nixConfig.bash-prompt = "\[nix-develop\]$ ";
   inputs.nixpkgs.url = "github:nixos/nixpkgs";
   inputs.flake-utils.url = "github:numtide/flake-utils";
@@ -16,7 +16,7 @@
         };
 
         futTarget = "app.fut";
-        name = "FableTemplate";
+        name = "FableGUITemplate";
         version = let _ver = builtins.getEnv "GITVERSION_NUGETVERSIONV2"; in if _ver == "" then "0.0.0" else "${_ver}.${builtins.getEnv "GITVERSION_COMMITSSINCEVERSIONSOURCE"}";
         configArg = "";
         lockFile = ./fsharp/packages.lock.json;
