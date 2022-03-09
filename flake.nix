@@ -3,8 +3,12 @@
   nixConfig.bash-prompt = "\[nix-develop\]$ ";
   inputs.nixpkgs.url = "github:nixos/nixpkgs";
   inputs.flake-utils.url = "github:numtide/flake-utils";
+  inputs.flake-compat = {
+    url = github:edolstra/flake-compat;
+    flake = false;
+  };
 
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { self, nixpkgs, flake-utils, flake-compat }:
     flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { 
@@ -150,13 +154,15 @@
             doCheck = false;
             inherit version;
             DOTNET_CLI_TELEMETRY_OPTOUT=1;
-            LOCALE_ARCHIVE="${pkgs.glibcLocales}/lib/locale/locale-archive";
             CLR_OPENSSL_VERSION_OVERRIDE=1.1;
             DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1;
             DOTNET_CLI_HOME = "/tmp/dotnet_cli";
             DOTNET_ROOT = "${sdk}";
-            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ [ nodejs sdk pkgs.openssl pkgs.gcc-unwrapped.lib pkgs.zlib pkgs.tlf pkgs.libkrb5 pkgs.icu.out ];
+            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ [ nodejs ];
           };
+
+          # Necessary for flake-compat
+          devShell = devShells.default;
 
           checks.futlib = pkgs.stdenv.mkDerivation {
             src = ./futhark;
