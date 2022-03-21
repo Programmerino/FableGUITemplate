@@ -44,7 +44,6 @@ jobs:
         id:   gitversion
         uses: gittools/actions/gitversion/execute@v0.9.10
       - run: nix build --impure -L
-      - run: nix flake check --impure -L
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
