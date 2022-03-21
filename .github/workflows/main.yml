@@ -30,8 +30,8 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          title: "${{ steps.gitversion.outputs.semVer}}"
-          automatic_release_tag: "${{ steps.gitversion.outputs.semVer}}"
+          title: "${{ steps.gitversion.outputs.FullSemVer}}"
+          automatic_release_tag: "latest"
           prerelease: ${{ steps.gitversion.outputs.preReleaseLabel != '' }}
           files: |
             ./result/*
