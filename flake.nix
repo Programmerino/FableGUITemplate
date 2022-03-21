@@ -477,7 +477,7 @@
                 cd deps/${packageName}
                 mkdir -p ./www/js
                 cp -rs ${bundle}/. ./www
-                ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.version = "${semver}"'
+                ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.version = "${version}"'
 
                 cordova telemetry off
                 ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.build.electronVersion = "${electronVersion}"'
