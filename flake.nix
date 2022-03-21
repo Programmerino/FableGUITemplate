@@ -25,6 +25,7 @@
         name = "FableGUITemplate";
         packageName = "com.programmerino.fableguitemplate";
         version = let _ver = builtins.getEnv "GITVERSION_NUGETVERSIONV2"; in if _ver == "" then "0.0.0" else "${_ver}.${builtins.getEnv "GITVERSION_COMMITSSINCEVERSIONSOURCE"}";
+        semver = let _ver = builtins.getEnv "GITVERSION_SEMVER"; in if _ver == "" then "0.0.0" else "${_ver}";
         configArg = "";
         lockFile = ./fsharp/dotnet/packages.lock.json;
         nugetSha256 = "sha256-DJsc6Ena7iDF25V7z9bR61DgMxnhpkxd3PPOZNpJZ9w=";
@@ -477,7 +478,7 @@
                 cd deps/${packageName}
                 mkdir -p ./www/js
                 cp -rs ${bundle}/. ./www
-                ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.version = "${version}"'
+                ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.version = "${semver}"'
 
                 cordova telemetry off
                 ${pkgs.nodePackages.json}/bin/json -I -f package.json -e 'this.build.electronVersion = "${electronVersion}"'
