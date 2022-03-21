@@ -1,2 +1,2 @@
 # FableGUITemplate
-A template for Fable projects
+A template for Fable projects using Vite for rapid development, Nix for reproducible build management, Cordova for multi-platform builds (currently Android, Linux, Windows, and MacOS), Elmish/Feliz for GUI, and Futhark integration for fast-running, multicore code. Projects built with it should use `cachix use programmerino` to speed up the initial compile, and for remote pipelines.

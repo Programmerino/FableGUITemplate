@@ -1,5 +1,40 @@
 {
   "nodes": {
+    "android2nix": {
+      "inputs": {
+        "devshell-flake": "devshell-flake",
+        "flake-utils": "flake-utils",
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1634156855,
+        "narHash": "sha256-9wVNg+HgoJtEaLkhmhIe5RxATdmXRHGNGivaFuTfCPc=",
+        "owner": "Mazurel",
+        "repo": "android2nix",
+        "rev": "7c672268a19773dfecd720c0440fafd8e2ed2df9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Mazurel",
+        "repo": "android2nix",
+        "type": "github"
+      }
+    },
+    "devshell-flake": {
+      "locked": {
+        "lastModified": 1631528035,
+        "narHash": "sha256-ZV4+WsrF1uaAOM2ynGzWD5dCmrWpKc+Rj1hZkodEPQY=",
+        "owner": "numtide",
+        "repo": "devshell",
+        "rev": "dd0d585d2ed42b9d226673dd56d4fe2dfd0bf0dc",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "devshell",
+        "type": "github"
+      }
+    },
     "flake-compat": {
       "flake": false,
       "locked": {
@@ -18,6 +53,21 @@
     },
     "flake-utils": {
       "locked": {
+        "lastModified": 1631561581,
+        "narHash": "sha256-3VQMV5zvxaVLvqqUrNz3iJelLw30mIVSfZmAaauM3dA=",
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "rev": "7e5bf3925f6fbdfaf50a2a7ca0be2879c4261d19",
+        "type": "github"
+      },
+      "original": {
+        "owner": "numtide",
+        "repo": "flake-utils",
+        "type": "github"
+      }
+    },
+    "flake-utils_2": {
+      "locked": {
         "lastModified": 1644229661,
         "narHash": "sha256-1YdnJAsNy69bpcjuoKdOYQX0YxZBiCYZo4Twxerqv7k=",
         "owner": "numtide",
@@ -33,11 +83,27 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1646001575,
-        "narHash": "sha256-6jwaaiSmjC76JvyEj4B/81gwDopbRGT6AvWP6NSOqII=",
+        "lastModified": 1631962327,
+        "narHash": "sha256-h2fgtNHozEcB42BQ1QVWAJUpQ1FA3gpgq/RrOKAxbfE=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "bc9b956714ed6eac5f8888322aac5bc41389defa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1646943458,
+        "narHash": "sha256-qgGBWULyReIEdRg/k52Tv4Eognyk8S9360oxem+1qFY=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "f006f108ab66d49d4755819213be80bd2f9c0d3b",
+        "rev": "b3b026509758cebbaa4e3173c1f1531102b28b64",
         "type": "github"
       },
       "original": {
@@ -48,9 +114,10 @@
     },
     "root": {
       "inputs": {
+        "android2nix": "android2nix",
         "flake-compat": "flake-compat",
-        "flake-utils": "flake-utils",
-        "nixpkgs": "nixpkgs"
+        "flake-utils": "flake-utils_2",
+        "nixpkgs": "nixpkgs_2"
       }
     }
   },

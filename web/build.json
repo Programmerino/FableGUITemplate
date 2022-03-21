@@ -1,0 +1,19 @@
+{
+    "electron": {
+        "linux": {
+            "package": [
+                "AppImage"
+            ]
+        },
+        "mac": {
+            "package": [
+                "dir"
+            ]
+        },
+        "windows": {
+            "package": [
+                "portable"
+            ]
+        }
+    }
+}

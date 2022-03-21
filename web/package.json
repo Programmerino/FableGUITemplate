@@ -1,0 +1,44 @@
+{
+  "name": "com.programmerino.fableguitemplate",
+  "displayName": "FableGUITemplate",
+  "description": "FableGUITemplate",
+  "version": "1.0.0",
+  "scripts": {
+    "nix-hook": "$@"
+  },
+  "keywords": [
+    "ecosystem:cordova"
+  ],
+  "author": "Davis Davalos-DeLosh",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "cordova-android": "^10.1.1",
+    "cordova-electron": "^3.0.0"
+  },
+  "cordova": {
+    "platforms": [
+      "electron",
+      "android"
+    ]
+  },
+  "build": {
+    "npmArgs": "--offline",
+    "npmRebuild": false,
+    "mac": {
+      "compression": "store",
+      "category": "public.app-category.utilities",
+      "target": "dir",
+      "darkModeSupport": "true"
+    },
+    "win": {
+      "compression": "store",
+      "target": "portable",
+      "signAndEditExecutable": false
+    },
+    "linux": {
+      "compression": "store",
+      "target": "AppImage"
+    },
+    "electronDownload": {}
+  }
+}
