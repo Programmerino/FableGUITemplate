@@ -4,7 +4,7 @@ import filterReplace from 'vite-plugin-filter-replace';
 
 export default defineConfig({
     define: {
-        "global": "window",
+        "global": "globalThis",
     },
     cacheDir: ".vite",
     preserveSymlinks: true,
@@ -23,6 +23,11 @@ export default defineConfig({
         )
     ],
     optimizeDeps: {
+        esbuildOptions: {
+            define: {
+                global: 'globalThis'
+            },
+        },
         exclude: ['/home/davis/Documents/Personal/CSProjects/FableGUITemplate/dev/js/app.fut.worker.js'],
     },
 });
