@@ -1,2 +1,2 @@
 #!/bin/bash
-npx vite --open --cors
+yarn exec -- vite --cors
