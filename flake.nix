@@ -9,11 +9,13 @@
   inputs.android2nix = {
     url = github:Mazurel/android2nix;
   };
+  inputs.dotnet.url = "github:Programmerino/dotnet-nix";
+  inputs.fableFlake.url = "github:Programmerino/fable.nix";
 
-  outputs = { self, nixpkgs, flake-utils, flake-compat, android2nix }:
+  outputs = { self, nixpkgs, flake-utils, flake-compat, android2nix, dotnet, fableFlake }:
     flake-utils.lib.eachSystem [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
       let
-
+        fable = fableFlake.defaultPackage."${system}";
         pkgs = import nixpkgs { 
           inherit system;
           config = {
@@ -27,7 +29,7 @@
         version = let _ver = builtins.getEnv "GITVERSION_SEMVER"; in if _ver == "" then "0.0.0" else "${_ver}";
         configArg = "";
         lockFile = ./fsharp/dotnet/packages.lock.json;
-        nugetSha256 = "sha256-DJsc6Ena7iDF25V7z9bR61DgMxnhpkxd3PPOZNpJZ9w=";
+        nugetSha256 = "sha256-hLOS83YXZQn4zweJvn1AaLq1FPBfGv1guDE6fdCyHFU=";
         project = "";
         FSharpEntry = "App.fs";
         FSharpOut = "App.js";
@@ -39,69 +41,6 @@
         sdk = pkgs.dotnet-sdk;
         jdk = pkgs.zulu;
         nodejs = pkgs.nodejs-12_x;
-
-        fable-repo = pkgs.stdenv.mkDerivation rec {
-          dontFetch = true;
-          dontStrip = true;
-          dontConfigure = true;
-          dontPatch = true;
-          dontInstall = true;
-          dontBuild = true;
-          pname = "fable-repo";
-          version = "3.7.6";
-          src = pkgs.fetchurl {
-            sha256 = "sha256-Ct8CQhdKuvpkoNWH7P7ePxCuMFTKoT8ux3b78xZcLVM=";
-            url = "https://www.nuget.org/api/v2/package/Fable/${version}";
-          };
-          unpackPhase = ''
-            runHook preUnpack
-
-            ${pkgs.unzip}/bin/unzip -q $src -d $out
-
-            runHook postUnpack
-          '';
-        };
-        fable = pkgs.writeShellApplication {
-          name = "fable";
-          text = ''
-            #!${pkgs.bash_5}/bin/bash
-            ${sdk}/bin/dotnet ${fable-repo}/tools/net5.0/any/fable.dll "$@"
-          '';
-        };
-
-        nugetPackages-unpatched = pkgs.stdenv.mkDerivation {
-          name = "${name}-${builtins.hashFile "sha1" lockFile}-${builtins.hashString "sha1" configArg}-nuget-pkgs-unpatched";
-
-          outputHashAlgo = "sha256";
-          outputHash = nugetSha256;
-          outputHashMode = "recursive";
-
-          nativeBuildInputs = [
-              sdk
-              pkgs.cacert
-          ];
-
-          dontFetch = true;
-          dontUnpack = true;
-          dontStrip = true;
-          dontConfigure = true;
-          dontPatch = true;
-          dontBuild = true;
-          DOTNET_CLI_TELEMETRY_OPTOUT=1;
-
-          installPhase = ''
-              mkdir -p $out
-              export HOME=$(mktemp -d)
-              cp -Rs ${./fsharp/dotnet} $HOME/tmp-sln
-              chmod -R +rw $HOME/tmp-sln
-              dotnet restore --locked-mode --use-lock-file${configArg} --lock-file-path "${lockFile}" --no-cache --nologo --packages $out $HOME/tmp-sln
-            '';
-          };
-
-        depsWithRuntime = pkgs.symlinkJoin {
-          name = "${name}-deps-with-runtime";
-          paths = [ "${sdk}/shared" nugetPackages-unpatched ];
-        };
 
         futlib = pkgs.stdenv.mkDerivation {
           inherit version;
@@ -129,27 +68,20 @@
               packageJSON = ./fsharp/deps/package.json;
            };
 
-        fsharp = pkgs.stdenv.mkDerivation {
-          inherit version;
-          name = "${name}-fsharp";
+        fsharp = dotnet.buildDotNetProject.${system} rec {
+          inherit name version sdk system;
+          inherit nugetSha256 lockFile;
+          library = false;
           src = ./fsharp/dotnet;
-          outputs = [ "out" ];
-          nativeBuildInputs = [ sdk ];
-          DOTNET_CLI_TELEMETRY_OPTOUT=1;
-          dontFixup = true;
-          dontConfigure = true;
-          dontInstall = true;
-          buildPhase = ''
-            export HOME="$(mktemp -d)"
-            mkdir -p $out
+          preBuild = ''
             cd ..
             mkdir -p deps
             cp -Rs ${fsharp-modules}/node_modules deps/
             cd -
-            dotnet restore --source ${depsWithRuntime} --nologo --locked-mode${configArg}  --use-lock-file --lock-file-path "${lockFile}" ${project}
-            cp -r precompile $out || true
-            ${fable}/bin/fable precompile ${project} -o $out
           '';
+          useFable = true;
+          fablePackage = fable;
+          nodePackage = nodejs;
         };
 
         platformToolsVersion = "31.0.3";
@@ -171,8 +103,8 @@
           inherit includeSources includeSystemImages useGoogleAPIs useGoogleTVAddOns;
         };
 
-        bundle-unprocessed = pkgs.stdenv.mkDerivation {
-          name = "${name}-bundle-unprocessed";
+        bundle = pkgs.stdenv.mkDerivation {
+          name = "${name}-bundle";
           inherit version;
           dontStrip = true;
           dontPatch = true;
@@ -192,22 +124,6 @@
               cp -s ${futlib}/*js $out/js
           '';
         };
-
-        bundle = bundle-unprocessed;
-
-        # bundle = pkgs.stdenv.mkDerivation {
-        #   name = "${name}-bundle";
-        #   inherit version;
-        #   dontStrip = true;
-        #   dontPatch = true;
-        #   dontUnpack = true;
-        #   dontInstall = true;
-        #   dontFixup = true;
-        #   dontConfigure = true;
-        #   buildPhase = ''
-        #     ${pkgs.nodePackages.terser}/bin/terser --comments all --module -c sequences=false,arguments,inline=false,reduce_vars=false,collapse_vars=false,keep_fargs=false,keep_infinity,module,passes=2,pure_getters=true,reduce_funcs=false,reduce_vars=false,toplevel,typeofs=false,unsafe,unsafe_arrows=true,ecma=2015,unsafe_math,unsafe_methods=true ${bundle-unprocessed} | ${pkgs.nodePackages.js-beautify}/bin/js-beautify > $out
-        #   '';
-        # };
 
         tomlStringify = x: "[ \"" + (pkgs.lib.strings.concatStringsSep ", " x) + "\" ]";
         androidEnv = android2nix.lib.mkAndroid2nixEnv (
@@ -231,7 +147,7 @@
                           export EMCFLAGS="${futlib.EMCFLAGS}"
                           cd ..
                           cp -rlf $PWD/web/www/. $PWD/dev/
-                          cp -rlf $PWD/fsharp/deps/. $PWD/dev/
+                          cp -rsf $PWD/fsharp/deps/. $PWD/dev/
                           cp -rlf $PWD/fsharp/dotnet/. $PWD/dev/src
                           cd dev
                           mkdir -p deps
@@ -538,7 +454,7 @@
             DOTNET_CLI_HOME = "/tmp/dotnet_cli";
             DOTNET_ROOT = "${sdk}";
             ANDROID_SDK_ROOT="${androidComposition.androidsdk}/libexec/android-sdk";
-            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ packages.default.extraBuildInputs ++ [ pkgs.yarn fable pkgs.starship pkgs.inotifyTools ];
+            buildInputs = futlib.nativeBuildInputs ++ fsharp.nativeBuildInputs ++ packages.default.extraBuildInputs ++ [ pkgs.yarn fable pkgs.starship pkgs.inotifyTools nodejs pkgs.futhark ];
             shellHook = ''
               exec ${androidEnv.devShell."${system}"}
             '';
