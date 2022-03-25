@@ -286,12 +286,12 @@
             };
             winElect = arch: sha256: webElect "win32-${arch}" sha256;
             mapping = {
-              "i686-windows" = {arch = "ia32"; os = "windows"; electronSrc = winElect "ia32" "sha256-xE1UPjp6awDNB7KZcrB2UjdV2b4S4yT/U8L3yZPk0xQ=";};
-              "x86_64-windows" = {arch = "x64"; os = "windows"; electronSrc = winElect "x64" "sha256-mYSv653vZfYVNYtL18W2NxsbwRxE1Kev8l1RKUQ82BU=";};
-              "aarch64-windows" = {arch = "arm64"; os = "windows"; electronSrc = winElect "arm64" "sha256-IZFLFGx+D2Y0nVhMbjLBDCCwvt4kmfbE5cKrdmZUvG4=";};
+              "i686-windows" = {arch = "ia32"; os = "windows"; electronSrc = winElect "ia32" "sha256-X8BOH/oXbzDF7PPERRs+WGa0T9K2TsAI1GLxXQGu++0=";};
+              "x86_64-windows" = {arch = "x64"; os = "windows"; electronSrc = winElect "x64" "sha256-/v94WEGuoypZq+S1enjkn241ghYZZU/iWZoP8bxeXoE=";};
+              "aarch64-windows" = {arch = "arm64"; os = "windows"; electronSrc = winElect "arm64" "sha256-EdqJgd8JfBk8EEjsWHRS+CVYr2VoB3q0r7keCdwncVk=";};
               "aarch64-linux" = {arch = "arm64"; os = "linux"; electronSrc = tsystem.electron.src;};
               "x86_64-linux" = {arch = "x64"; os = "linux"; electronSrc = tsystem.electron.src;};
-              "armv7l-linux" = {arch = "armv7l"; os = "linux"; electronSrc = webElect "linux-armv7l" "sha256-CdkhlYIarUrAP7yFgoenNytqoFkIG7gl0meFPuGwQl0=";};
+              "armv7l-linux" = {arch = "armv7l"; os = "linux"; electronSrc = webElect "linux-armv7l" "sha256-tWHATJ+oxRL0GOpcMvVSZzLhzNFQ7kgwoAkdD6G34xw=";};
               "i686-linux" = {arch = "ia32"; os = "linux"; electronSrc = tsystem.electron.src;};
               "x86_64-darwin" = {arch = "x64"; os = "mac"; electronSrc = tsystem.electron.src;};
               "aarch64-darwin" = {arch = "arm64"; os = "mac"; electronSrc = tsystem.electron.src;};
